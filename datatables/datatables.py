@@ -4,14 +4,15 @@ from sqlalchemy.sql import or_, and_
 from sqlalchemy.orm.properties import RelationshipProperty
 from sqlalchemy.sql.expression import cast
 from sqlalchemy import String
+import logging
 
 from collections import namedtuple
 
 ColumnTuple = namedtuple('ColumnDT', ['column_name', 'mData', 'search_like', 'filter'])
-
+log = logging.getLogger(__name__)
 
 def get_attr(sqla_object, attribute):
-    """Returns the value of an attribute of an SQLAlchemy entity 
+    """Returns the value of an attribute of an SQLAlchemy entity
     """
     output = sqla_object
     for x in attribute.split('.'):
@@ -28,11 +29,11 @@ class ColumnDT(ColumnTuple):
     :type mData: str
     :param search_like: search criteria to like on without forgetting to escape the '%' character
     :type search_like: str
-    :param filter: the method needed to be executed on the cell values of the column 
+    :param filter: the method needed to be executed on the cell values of the column
     as an equivalent of a jinja2 filter (default None)
     :type filter: a callable object
 
-    :returns: a ColumnDT object 
+    :returns: a ColumnDT object
     """
     def __new__(cls, column_name, mData=None, search_like=None, filter=str):
         """
@@ -45,7 +46,7 @@ class ColumnDT(ColumnTuple):
 class DataTables:
     """Class defining a DataTables object with:
 
-    :param request: request containing the GET values, specified by the 
+    :param request: request containing the GET values, specified by the
     datatable for filtering, sorting and paging
     :type request: pyramid.request
     :param sqla_object: your SQLAlchemy table object
@@ -81,9 +82,9 @@ class DataTables:
         output['sEcho'] = str(int(self.request_values['sEcho']))
         output['iTotalRecords'] = str(self.cardinality)
         output['iTotalDisplayRecords'] = str(self.cardinality_filtered)
-        
+
         output['aaData'] = self.results
- 
+
         return output
 
     def run(self):
@@ -91,7 +92,7 @@ class DataTables:
         """
         # count before filtering
         self.cardinality = self.query.count()
-        
+
         # the term entered in the datatable's search box
         self.filtering()
 
@@ -152,26 +153,41 @@ class DataTables:
             condition = or_(*conditions)
         conditions = []
         for idx, col in enumerate(self.columns):
-            if self.request_values.get('sSearch_%s' % idx) in (True, 'true'):
+            log.debug('Debug filtering idx - %r, col - %r', idx, col)
+            log.debug('Value for sSearch_%s is %s', idx, self.request_values.get('sSearch_%s' % idx))
+            if self.request_values.get('sSearch_%s' % idx):
+                log.debug('Found filter request for idx - %r, col - %r', idx, col)
                 search_value2 = self.request_values.get('sSearch_%s' % idx)
+                log.debug('Set search_value2 - %r', search_value2)
                 sqla_obj, column_name = search(idx, col)
-                
+                log.debug('Values for sqla_obj - %r, column_name - %r', sqla_obj, column_name)
+
                 if col.search_like:
+                    log.debug('Value of col.search_like was True')
                     conditions.append(cast(get_attr(sqla_obj, column_name), String).like(col.search_like % search_value2))
                 else:
+                    log.debug('Value of col.search_like was not True')
                     conditions.append(cast(get_attr(sqla_obj, column_name), String).__eq__(search_value2))
+                    log.debug('Value of conditions is %r', conditions)
 
                 if condition is not None:
+                    log.debug('Value of condition is not None and value is %r', condition)
                     condition = and_(condition, and_(*conditions))
+                    log.debug('Value of condition after is %r', condition)
                 else:
+                    log.debug('Value of condition is None')
                     condition= and_(*conditions)
+                    log.debug('Value of condition after is %r', condition)
 
         if condition is not None:
+            log.debug('Value of condition is not None')
             self.query = self.query.filter(condition)
             # count after filtering
             self.cardinality_filtered = self.query.count()
+            log.debug('Values of self.query - %r, self.cardinality_filtered - %r', self.query, self.cardinality_filtered)
         else:
             self.cardinality_filtered = self.cardinality
+            log.debug('Value of condition was None and self.cardinality_filtered is %r', self.cardinality_filtered)
 
     def sorting(self):
         """Construct the query, by adding sorting(ORDER BY) on the columns needed to be applied on
