@@ -15,8 +15,19 @@ def get_attr(sqla_object, attribute):
     """Returns the value of an attribute of an SQLAlchemy entity
     """
     output = sqla_object
+    #log.debug('SQL object dir - %s', dir(sqla_object.properties))
+    #log.debug('Value of arch in properties - %s' % sqla_object.properties.arch)
+    #log.debug('Attribute value - %s', attribute)
+    previous = ''
     for x in attribute.split('.'):
-        output = getattr(output, x)
+        if hasattr(output, x):
+            output = getattr(output, x)
+        elif previous:
+            if hasattr(output, previous + '.' + x):
+                output = getattr(output, previous + '.' + x)
+        else:
+            previous = x
+
     return output
 
 
@@ -238,7 +249,7 @@ class DataTables:
         """
         pages = namedtuple('pages', ['start', 'length'])
 
-        if (self.request_values['iDisplayStart'] != "" ) \
+        if (self.request_values['iDisplayStart'] ) \
             and (self.request_values['iDisplayLength'] != -1 ):
             pages.start = int(self.request_values['iDisplayStart'])
             pages.length = int(self.request_values['iDisplayLength'])
