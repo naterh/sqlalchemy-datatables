@@ -229,6 +229,7 @@ class DataTables:
                  # Ex: address.description => description => addresses.description
                 log.debug('Sort value is a foreign key - %s', str(obj.property))
                 sort_name = "".join(tmp_sort_name[1:])
+                log.debug('Value of tmp_sort_name - %s sort_name - %s', tmp_sort_name, sort_name)
                 if not sort_name:
                     # Find first primary key
                     sort_name = obj.property.table.primary_key.columns \
