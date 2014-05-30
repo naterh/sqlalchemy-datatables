@@ -229,8 +229,8 @@ class DataTables:
                  # Ex: address.description => description => addresses.description
                 log.debug('Sort value is a foreign key - %s', str(obj.property))
                 sort_name = "".join(tmp_sort_name[1:])
-                if tmp_sort_name[1] == 'com':
-                    sort_name = ".".join(tmp_sort_name[1:])
+                if tmp_sort_name[1] in ['com', 'org']:  # Namespace column has periods
+                    sort_name = '`' + ".".join(tmp_sort_name[1:]) + '`'
                 log.debug('Value of tmp_sort_name - %s sort_name - %s', tmp_sort_name, sort_name)
                 if not sort_name:
                     # Find first primary key
