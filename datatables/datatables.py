@@ -218,6 +218,7 @@ class DataTables:
             tmp_sort_name = sort.name.split('.')
             obj = getattr(self.sqla_object, tmp_sort_name[0])
             if not hasattr(obj, "property"): #hybrid_property or property
+                log.debug('Sort value is hybrid_property or property - %s', dir(obj))
                 sort_name = sort.name
 
                 if hasattr(self.sqla_object, "__tablename__"):
@@ -226,6 +227,7 @@ class DataTables:
                     tablename = self.sqla_object.__table__.name
             elif isinstance(obj.property, RelationshipProperty): # Ex: ForeignKey
                  # Ex: address.description => description => addresses.description
+                 log.debug('Sort value is a foreign key - %s', str(obj.property))
                 sort_name = "".join(tmp_sort_name[1:])
                 if not sort_name:
                     # Find first primary key
@@ -233,6 +235,7 @@ class DataTables:
                             .values()[0].name
                 tablename = obj.property.table.name
             else: #-> ColumnProperty
+                log.debug('Sort value is column property - %s', sort.name)
                 sort_name = sort.name
 
                 if hasattr(self.sqla_object, "__tablename__"):
