@@ -227,7 +227,7 @@ class DataTables:
                     tablename = self.sqla_object.__table__.name
             elif isinstance(obj.property, RelationshipProperty): # Ex: ForeignKey
                  # Ex: address.description => description => addresses.description
-                 log.debug('Sort value is a foreign key - %s', str(obj.property))
+                log.debug('Sort value is a foreign key - %s', str(obj.property))
                 sort_name = "".join(tmp_sort_name[1:])
                 if not sort_name:
                     # Find first primary key
