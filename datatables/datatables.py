@@ -11,6 +11,7 @@ from collections import namedtuple
 ColumnTuple = namedtuple('ColumnDT', ['column_name', 'mData', 'search_like', 'filter'])
 log = logging.getLogger(__name__)
 
+
 def get_attr(sqla_object, attribute):
     """Returns the value of an attribute of an SQLAlchemy entity
     """
@@ -137,14 +138,20 @@ class DataTables:
         condition = None
         def search(idx, col):
             tmp_column_name = col.column_name.split('.')
+            log.debug('Value of tmp_column_name in filtering - %s', tmp_column_name)
             obj = getattr(self.sqla_object, tmp_column_name[0])
             if not hasattr(obj, "property"): # Ex: hybrid_property or property
+                log.debug('Filtering on property or hybrid_property')
                 sqla_obj = self.sqla_object
                 column_name = col.column_name
             elif isinstance(obj.property, RelationshipProperty): #Ex: ForeignKey
                 # Ex: address.description
+                log.debug('Filtering on ForeignKey')
                 sqla_obj = obj.mapper.class_
-                column_name = "".join(tmp_column_name[1:])
+                if tmp_column_name[1] in ['com', 'org']:  # Namespace column has periods
+                    column_name = ".".join(tmp_column_name[1:])
+                else:
+                    column_name = "".join(tmp_column_name[1:])
                 if not column_name:
                     # find first primary key
                     column_name = obj.property.table.primary_key.columns \
@@ -152,16 +159,20 @@ class DataTables:
             else:
                 sqla_obj = self.sqla_object
                 column_name = col.column_name
+            log.debug('Returning column_name from filtering - %s' % column_name)
             return sqla_obj, column_name
 
         if search_value:
             conditions = []
             for idx, col in enumerate(self.columns):
+                log.debug('Value of request value bSearchable_%s is %s', idx, self.request_values.get('bSearchable_%s' % idx))
                 if self.request_values.get('bSearchable_%s' % idx) in (
                         True, 'true'):
                     sqla_obj, column_name = search(idx, col)
+                    log.debug('Value of getattr sqlobj column_name - %s', str(getattr(sqla_obj, column_name)))
                     conditions.append(cast(get_attr(sqla_obj, column_name), String).ilike('%%%s%%' % search_value))
             condition = or_(*conditions)
+            log.debug('Value of condition in filtering - ', condition)
         conditions = []
         for idx, col in enumerate(self.columns):
             log.debug('Debug filtering idx - %r, col - %r', idx, col)
@@ -175,6 +186,8 @@ class DataTables:
 
                 if col.search_like:
                     log.debug('Value of col.search_like was True')
+                    log.debug('Getting dir on sqla_obj - %s', dir(sqla_obj))
+                    log.debug('Value of get_attr sqla_obj column_name - %s, Value of search_value2 - %s', get_attr(sqla_obj, column_name), search_value2)
                     conditions.append(cast(get_attr(sqla_obj, column_name), String).like(col.search_like % search_value2))
                 else:
                     log.debug('Value of col.search_like was not True')
@@ -191,11 +204,11 @@ class DataTables:
                     log.debug('Value of condition after is %r', condition)
 
         if condition is not None:
-            log.debug('Value of condition is not None')
+            log.debug('Value of condition is not None and is %s', condition)
             self.query = self.query.filter(condition)
             # count after filtering
             self.cardinality_filtered = self.query.count()
-            log.debug('Values of self.query - %r, self.cardinality_filtered - %r', self.query, self.cardinality_filtered)
+            log.debug('Values of self.query - %s, self.cardinality_filtered - %r', self.query.as_scalar(), self.cardinality_filtered)
         else:
             self.cardinality_filtered = self.cardinality
             log.debug('Value of condition was None and self.cardinality_filtered is %r', self.cardinality_filtered)
