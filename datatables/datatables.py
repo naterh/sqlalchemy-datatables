@@ -138,15 +138,15 @@ class DataTables:
         condition = None
         def search(idx, col):
             tmp_column_name = col.column_name.split('.')
-            log.debug('Value of tmp_column_name in filtering - %s', tmp_column_name)
+            #log.debug('Value of tmp_column_name in filtering - %s', tmp_column_name)
             obj = getattr(self.sqla_object, tmp_column_name[0])
             if not hasattr(obj, "property"): # Ex: hybrid_property or property
-                log.debug('Filtering on property or hybrid_property')
+                #log.debug('Filtering on property or hybrid_property')
                 sqla_obj = self.sqla_object
                 column_name = col.column_name
             elif isinstance(obj.property, RelationshipProperty): #Ex: ForeignKey
                 # Ex: address.description
-                log.debug('Filtering on ForeignKey')
+                #log.debug('Filtering on ForeignKey')
                 sqla_obj = obj.mapper.class_
                 if tmp_column_name[1] in ['com', 'org']:  # Namespace column has periods
                     column_name = ".".join(tmp_column_name[1:])
@@ -159,59 +159,58 @@ class DataTables:
             else:
                 sqla_obj = self.sqla_object
                 column_name = col.column_name
-            log.debug('Returning column_name from filtering - %s' % column_name)
+            #log.debug('Returning column_name from filtering - %s' % column_name)
             return sqla_obj, column_name
 
         if search_value:
             conditions = []
             for idx, col in enumerate(self.columns):
-                log.debug('Value of request value bSearchable_%s is %s', idx, self.request_values.get('bSearchable_%s' % idx))
+                #log.debug('Value of request value bSearchable_%s is %s', idx, self.request_values.get('bSearchable_%s' % idx))
                 if self.request_values.get('bSearchable_%s' % idx) in (
                         True, 'true'):
                     sqla_obj, column_name = search(idx, col)
                     log.debug('Value of getattr sqlobj column_name - %s', str(getattr(sqla_obj, column_name)))
                     conditions.append(cast(get_attr(sqla_obj, column_name), String).ilike('%%%s%%' % search_value))
             condition = or_(*conditions)
-            log.debug('Value of condition in filtering - ', condition)
         conditions = []
         for idx, col in enumerate(self.columns):
-            log.debug('Debug filtering idx - %r, col - %r', idx, col)
-            log.debug('Value for sSearch_%s is %s', idx, self.request_values.get('sSearch_%s' % idx))
+            #log.debug('Debug filtering idx - %r, col - %r', idx, col)
+            #log.debug('Value for sSearch_%s is %s', idx, self.request_values.get('sSearch_%s' % idx))
             if self.request_values.get('sSearch_%s' % idx):
-                log.debug('Found filter request for idx - %r, col - %r', idx, col)
+                #log.debug('Found filter request for idx - %r, col - %r', idx, col)
                 search_value2 = self.request_values.get('sSearch_%s' % idx)
-                log.debug('Set search_value2 - %r', search_value2)
+                #log.debug('Set search_value2 - %r', search_value2)
                 sqla_obj, column_name = search(idx, col)
-                log.debug('Values for sqla_obj - %r, column_name - %r', sqla_obj, column_name)
+                #log.debug('Values for sqla_obj - %r, column_name - %r', sqla_obj, column_name)
 
                 if col.search_like:
-                    log.debug('Value of col.search_like was True')
-                    log.debug('Getting dir on sqla_obj - %s', dir(sqla_obj))
-                    log.debug('Value of get_attr sqla_obj column_name - %s, Value of search_value2 - %s', get_attr(sqla_obj, column_name), search_value2)
+                    #log.debug('Value of col.search_like was True')
+                    #log.debug('Getting dir on sqla_obj - %s', dir(sqla_obj))
+                    #log.debug('Value of get_attr sqla_obj column_name - %s, Value of search_value2 - %s', get_attr(sqla_obj, column_name), search_value2)
                     conditions.append(cast(get_attr(sqla_obj, column_name), String).like(col.search_like % search_value2))
                 else:
-                    log.debug('Value of col.search_like was not True')
+                    #log.debug('Value of col.search_like was not True')
                     conditions.append(cast(get_attr(sqla_obj, column_name), String).__eq__(search_value2))
-                    log.debug('Value of conditions is %r', conditions)
+                    #log.debug('Value of conditions is %r', conditions)
 
                 if condition is not None:
-                    log.debug('Value of condition is not None and value is %r', condition)
+                    #log.debug('Value of condition is not None and value is %r', condition)
                     condition = and_(condition, and_(*conditions))
-                    log.debug('Value of condition after is %r', condition)
+                    #log.debug('Value of condition after is %r', condition)
                 else:
-                    log.debug('Value of condition is None')
+                    #log.debug('Value of condition is None')
                     condition= and_(*conditions)
-                    log.debug('Value of condition after is %r', condition)
+                    #log.debug('Value of condition after is %r', condition)
 
         if condition is not None:
-            log.debug('Value of condition is not None and is %s', condition)
+            #log.debug('Value of condition is not None and is %s', condition)
             self.query = self.query.filter(condition)
             # count after filtering
             self.cardinality_filtered = self.query.count()
-            log.debug('Values of self.query - %s, self.cardinality_filtered - %r', self.query.as_scalar(), self.cardinality_filtered)
+            #log.debug('Values of self.query - %s, self.cardinality_filtered - %r', self.query.as_scalar(), self.cardinality_filtered)
         else:
             self.cardinality_filtered = self.cardinality
-            log.debug('Value of condition was None and self.cardinality_filtered is %r', self.cardinality_filtered)
+            #log.debug('Value of condition was None and self.cardinality_filtered is %r', self.cardinality_filtered)
 
     def sorting(self):
         """Construct the query, by adding sorting(ORDER BY) on the columns needed to be applied on
@@ -231,7 +230,7 @@ class DataTables:
             tmp_sort_name = sort.name.split('.')
             obj = getattr(self.sqla_object, tmp_sort_name[0])
             if not hasattr(obj, "property"): #hybrid_property or property
-                log.debug('Sort value is hybrid_property or property - %s', dir(obj))
+                #log.debug('Sort value is hybrid_property or property - %s', dir(obj))
                 sort_name = sort.name
 
                 if hasattr(self.sqla_object, "__tablename__"):
@@ -240,18 +239,18 @@ class DataTables:
                     tablename = self.sqla_object.__table__.name
             elif isinstance(obj.property, RelationshipProperty): # Ex: ForeignKey
                  # Ex: address.description => description => addresses.description
-                log.debug('Sort value is a foreign key - %s', str(obj.property))
+                #log.debug('Sort value is a foreign key - %s', str(obj.property))
                 sort_name = "".join(tmp_sort_name[1:])
                 if tmp_sort_name[1] in ['com', 'org']:  # Namespace column has periods
                     sort_name = '`' + ".".join(tmp_sort_name[1:]) + '`'
-                log.debug('Value of tmp_sort_name - %s sort_name - %s', tmp_sort_name, sort_name)
+                #log.debug('Value of tmp_sort_name - %s sort_name - %s', tmp_sort_name, sort_name)
                 if not sort_name:
                     # Find first primary key
                     sort_name = obj.property.table.primary_key.columns \
                             .values()[0].name
                 tablename = obj.property.table.name
             else: #-> ColumnProperty
-                log.debug('Sort value is column property - %s', sort.name)
+                #log.debug('Sort value is column property - %s', sort.name)
                 sort_name = sort.name
 
                 if hasattr(self.sqla_object, "__tablename__"):
