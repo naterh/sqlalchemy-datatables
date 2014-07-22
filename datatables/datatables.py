@@ -156,10 +156,7 @@ class DataTables:
                     # find first primary key
                     column_name = obj.property.table.primary_key.columns \
                         .values()[0].name
-                try:
-                    getattr(sqla_obj, column_name)
-                except:  # class needs init ran
-                    sqla_obj = sqla_obj()
+                sqla_obj()
             else:
                 sqla_obj = self.sqla_object
                 column_name = col.column_name
