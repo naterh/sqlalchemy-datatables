@@ -147,7 +147,7 @@ class DataTables:
             elif isinstance(obj.property, RelationshipProperty): #Ex: ForeignKey
                 # Ex: address.description
                 log.debug('Filtering on ForeignKey')
-                sqla_obj = obj.mapper.class_()
+                sqla_obj = obj.mapper.class_
                 if tmp_column_name[1] in ['com', 'org']:  # Namespace column has periods
                     column_name = ".".join(tmp_column_name[1:])
                 else:
@@ -169,8 +169,9 @@ class DataTables:
                 if self.request_values.get('bSearchable_%s' % idx) in (
                         True, 'true'):
                     sqla_obj, column_name = search(idx, col)
-                    log.debug('Value of getattr sqlobj column_name - %s', str(getattr(sqla_obj, column_name)))
-                    conditions.append(cast(get_attr(sqla_obj, column_name), String).ilike('%%%s%%' % search_value))
+                    if hasattr(sqla_obj, column_name):
+                        log.debug('Value of getattr sqlobj column_name - %s', str(getattr(sqla_obj, column_name)))
+                        conditions.append(cast(get_attr(sqla_obj, column_name), String).ilike('%%%s%%' % search_value))
             condition = or_(*conditions)
         conditions = []
         for idx, col in enumerate(self.columns):
