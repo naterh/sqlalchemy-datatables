@@ -16,9 +16,9 @@ def get_attr(sqla_object, attribute):
     """Returns the value of an attribute of an SQLAlchemy entity
     """
     output = sqla_object
-    log.debug('SQL object dir - %s', dir(sqla_object.properties))
-    log.debug('Value of arch in properties - %s' % sqla_object.properties.arch)
-    log.debug('Attribute value - %s', attribute)
+    #log.debug('SQL object dir - %s', dir(sqla_object.properties))
+    #log.debug('Value of arch in properties - %s' % sqla_object.properties.arch)
+    #log.debug('Attribute value - %s', attribute)
     previous = ''
     for x in attribute.split('.'):
         if hasattr(output, x):
