@@ -146,7 +146,7 @@ class DataTables:
                 column_name = col.column_name
             elif isinstance(obj.property, RelationshipProperty): #Ex: ForeignKey
                 # Ex: address.description
-                #log.debug('Filtering on ForeignKey')
+                log.debug('Filtering on ForeignKey')
                 sqla_obj = obj.mapper.class_
                 if tmp_column_name[1] in ['com', 'org']:  # Namespace column has periods
                     column_name = ".".join(tmp_column_name[1:])
@@ -156,6 +156,10 @@ class DataTables:
                     # find first primary key
                     column_name = obj.property.table.primary_key.columns \
                         .values()[0].name
+                try:
+                    getattr(sqla_obj, column_name)
+                except:  # class needs init ran
+                    sqla_obj = sqla_obj()
             else:
                 sqla_obj = self.sqla_object
                 column_name = col.column_name
